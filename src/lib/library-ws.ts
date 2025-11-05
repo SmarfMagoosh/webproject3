@@ -89,8 +89,17 @@ function getBookHandler(app: Express.Application) {
       } 
       // request came from BASE/books?<query params>
       else {
-        console.log(req.query);
-        const result = await lib.findBooks(req.query);
+        const searchParams: any = {}
+        // translate the input parameters for Zod
+        searchParams.search = req.query.search
+        if (req.query.index) {
+          searchParams.index = Number(req.query.index);
+        }
+        if (req.query.count) {
+          searchParams.count = Number(req.query.count);
+        }
+
+        const result = await lib.findBooks(searchParams);
         if (result.isOk) {
           const envelope = selfResult(req, result.val, STATUS.OK);
           return res.status(STATUS.OK).json(envelope);
@@ -140,7 +149,19 @@ function deleteLendingsHandler(app: Express.Application) {
 
 function deleteHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    // TODO: implement checkout book
+    try {
+      const result = await app.locals.model.clear();
+      if (result.isOk) {
+        const envelope = selfResult(req, result.val, STATUS.OK);
+        return res.status(STATUS.OK).json(envelope);
+      } else {
+        const errEnv = mapResultErrors(result);
+        return res.status(errEnv.status).json(errEnv);
+      }
+    } catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
+    }
   }
 }
 

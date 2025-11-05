@@ -234,7 +234,7 @@ describe('lending library web services', () => {
     
   });
   
-  describe.skip('Clear Web Service', async () => {
+  describe('Clear Web Service', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -257,7 +257,7 @@ describe('lending library web services', () => {
     
   });
   
-  describe.skip('Find Books Web Service', async () => {
+  describe('Find Books Web Service', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -304,14 +304,14 @@ describe('lending library web services', () => {
     it('must find all results', async () => {
       const count = 9999;
       for (const lang of [ 'javascript', 'ruby', 'scala' ]) {
-	const url = urlString(`${BASE}/books`, { search: lang, count });
-	const res = await ws.get(url);
-	expect(res.status).to.equal(STATUS.OK);
-	expect(res.body?.isOk).to.equal(true);	
-	expect(res.body.result).to.have.length(LANG_BOOKS[lang].length);
-	const expected = LANG_BOOKS[lang].map(b => ({nCopies: 1, ...b}));
-	const result: Record<string, any>[] = res.body.result;
-	expect(result.map(r => r.result)).to.deep.equal(expected);
+        const url = urlString(`${BASE}/books`, { search: lang, count });
+        const res = await ws.get(url);
+        expect(res.status).to.equal(STATUS.OK);
+        expect(res.body?.isOk).to.equal(true);	
+        expect(res.body.result).to.have.length(LANG_BOOKS[lang].length);
+        const expected = LANG_BOOKS[lang].map(b => ({nCopies: 1, ...b}));
+        const result: Record<string, any>[] = res.body.result;
+        expect(result.map(r => r.result)).to.deep.equal(expected);
       }
     });
 	       

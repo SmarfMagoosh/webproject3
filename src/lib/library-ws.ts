@@ -135,6 +135,37 @@ function putBooksHandler(app: Express.Application) {
   }
 }
 
+function findBooksHandler(app: Express.Application) {
+  return async function(req: Express.Request, res: Express.Response) {
+    const lib: LendingLibrary = app.locals.model;
+    try {
+      const searchParams: any = {}
+      
+      // translate the input parameters exactly like in your getBookHandler
+      searchParams.search = req.query.search as string;
+      
+      if (req.query.index) {
+        searchParams.index = Number(req.query.index);
+      }
+      if (req.query.count) {
+        searchParams.count = Number(req.query.count);
+      }
+
+      const result = await lib.findBooks(searchParams);
+      if (result.isOk) {
+        const envelope = selfResult(req, result.val, STATUS.OK);
+        return res.status(STATUS.OK).json(envelope);
+      } else {
+        const errEnv = mapResultErrors(result);
+        return res.status(errEnv.status).json(errEnv);
+      }
+    } catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
+    }
+  }
+}
+
 function putLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     // TODO: implement checkout book

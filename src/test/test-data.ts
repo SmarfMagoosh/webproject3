@@ -12,7 +12,7 @@ export { BOOKS, };
 //also, import json requires experimental import assertions
 async function getTestBooks() {
   console.log(process.env.HOME)
-  const dataPath = '../prj3-sol/data/books.json'
+  const dataPath = './data/books.json'
   const readResult = await readJson(dataPath);
   if (readResult.isOk === false) throw readResult.errors;
   return readResult.val as Record<string, any>[];

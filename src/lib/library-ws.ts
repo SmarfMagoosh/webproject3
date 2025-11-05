@@ -95,9 +95,22 @@ function getBookHandler(app: Express.Application) {
 
 function putBooksHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    const lib: LendingLibrary = app.locals.model;
-    const params = req.body;
-    lib.addBook(params)
+    try {
+      const lib: LendingLibrary = app.locals.model;
+      const params = req.body;
+      const result = await lib.addBook(params);
+      if (result.isOk) {
+        const envelope = selfResult(req, result.val, STATUS.CREATED);
+        res.location(selfHref(req, result.val.isbn));
+        return res.status(STATUS.CREATED).json(envelope);
+      }
+      const errEnv = mapResultErrors(result);
+      return res.status(errEnv.status).json(errEnv);
+    }
+    catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
+    }
   }
 }
 
@@ -118,8 +131,6 @@ function deleteHandler(app: Express.Application) {
     // TODO: implement checkout book
   }
 }
-
-
 
 /** log request on stdout */
 function doTrace(app: Express.Application) {

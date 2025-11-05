@@ -53,13 +53,13 @@ describe('lending library web services', () => {
 	  await ws.put(url)
 	    .set('Content-Type', 'application/json')
 	    .send(book);
-	expect(res.status).to.equal(STATUS.CREATED);
-	expect(res.body?.isOk).to.equal(true);
-	const links = res.body?.links;
-	expect(links?.self?.method).to.equal('PUT');
-	expect(links?.self?.href.endsWith(url));
-	expect(res.body.result).to.deep.equal(book);
-	expect(res.headers.location.endsWith(`${url}/${book.isbn}`));
+      expect(res.status).to.equal(STATUS.CREATED);
+      expect(res.body?.isOk).to.equal(true);
+      const links = res.body?.links;
+      expect(links?.self?.method).to.equal('PUT');
+      expect(links?.self?.href.endsWith(url));
+      expect(res.body.result).to.deep.equal(book);
+      expect(res.headers.location.endsWith(`${url}/${book.isbn}`));
       }
     });
 

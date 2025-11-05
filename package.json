@@ -4,23 +4,33 @@
   "description": "Team Member Names: Evan Dreher and Ateeq Ur Rahman\t        \tXXX Team Member B-Numbers:   \t        XXX One Email to be contacted with:\t\tedreher@binghamton.edu",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "mocha --reporter-options maxDiffSize=128000 dist/test"
   },
   "author": "",
   "license": "ISC",
+  "type": "module",
   "dependencies": {
     "body-parser": "^2.2.0",
+    "chai": "^6.2.0",
     "cors": "^2.8.5",
     "cs544-js-utils": "file:cs544-js-utils-0.0.1.tgz",
     "cs544-node-utils": "file:cs544-node-utils-0.0.1.tgz",
     "express": "^5.1.0",
     "http-status": "^2.1.0",
-    "lending-library": "file:lending-library-0.1.1.tgz"
+    "lending-library": "file:lending-library-0.1.1.tgz",
+    "mocha": "^11.7.5",
+    "mongodb-memory-server": "^10.3.0",
+    "supertest": "^7.1.4"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.6",
+    "@types/chai": "^5.2.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
-    "@types/node": "^24.10.0"
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.10.0",
+    "@types/semver": "^7.7.1",
+    "@types/supertest": "^6.0.3"
   }
 }

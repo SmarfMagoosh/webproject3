@@ -53,29 +53,43 @@ function setupRoutes(app: Express.Application) {
   //app.use(doTrace(app));
   
   //set up application routes
-  //TODO: set up application routes
-  app.get(`${base}/books/:isbn(^(\d{3}\-){3}\d$)`, getBookHandler(app));
+  app.get(`${base}/books/:isbn`, getBookHandler(app));
+
+  app.get(`${base}/books`, getBookHandler(app));
 
   app.put(`${base}/books`, putBooksHandler(app));
+
+  app.put(`${base}/lendings`, putLendingsHandler(app));
+
+  app.delete(`${base}/lendings`, deleteLendingsHandler(app));
+
+  app.delete(`${base}`, deleteHandler(app));
 
   //must be last
   app.use(do404(app));  //custom handler for page not found
   app.use(doErrors(app)); //custom handler for internal errors
 }
 
-//TODO: set up route handlers
+// route handlers
 function getBookHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     const lib: LendingLibrary = app.locals.model;
-    const isbn = req.params.isbn;
-    await lib.getBook(isbn)
-      .then(response => {
-          if (response.isOk) {
-            res.status(STATUS.OK).send(response.val);
-          } else {
-            res.status(STATUS.NOT_FOUND).send({ error: `No book found with ISBN ${isbn}`})
-          }
-      })
+    // request came from BASE/books/:isbn
+    if (req.params.isbn) {
+      const isbn = req.params.isbn;
+      await lib.getBook(isbn)
+        .then(response => {
+            if (response.isOk) {
+              res.status(STATUS.OK).send(response.val);
+            } else {
+              res.status(STATUS.NOT_FOUND).send({ error: `No book found with ISBN ${isbn}`})
+            }
+        })
+    } 
+    // request came from BASE/books?<query params>
+    else {
+      // TODO: implement Find-Books task
+    }
   }
 }
 
@@ -83,9 +97,29 @@ function putBooksHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     const lib: LendingLibrary = app.locals.model;
     const params = req.body;
-    console.log(params);
+    lib.addBook(params)
   }
 }
+
+function putLendingsHandler(app: Express.Application) {
+  return async function(req: Express.Request, res: Express.Response) {
+    // TODO: implement checkout book
+  }
+}
+
+function deleteLendingsHandler(app: Express.Application) {
+  return async function(req: Express.Request, res: Express.Response) {
+    // TODO: implement checkout book
+  }
+}
+
+function deleteHandler(app: Express.Application) {
+  return async function(req: Express.Request, res: Express.Response) {
+    // TODO: implement checkout book
+  }
+}
+
+
 
 /** log request on stdout */
 function doTrace(app: Express.Application) {

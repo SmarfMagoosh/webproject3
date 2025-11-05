@@ -96,7 +96,7 @@ describe('lending library web services: extra tests', () => {
     });
   });  //describe('addBooks()', ...)
 
-  describe.skip('Find Books Web Service', async () => {
+  describe('Find Books Web Service', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -115,30 +115,28 @@ describe('lending library web services: extra tests', () => {
       expect(res.body.result.length).to.equal(count);
       pages.push(res.body.result);
       for (let i = 0; i < nPages; i++) {
-	//page forward
-	const next = TestUtils.relativeUrl(res.body.links.next.href);
-	res = await ws.get(next);
-	expect(res.status).to.equal(STATUS.OK);
-	expect(res.body?.isOk).to.equal(true);	
-	expect(res.body.result.length).to.equal(count);
-	pages.push(res.body.result);
+        //page forward
+        const next = TestUtils.relativeUrl(res.body.links.next.href);
+        res = await ws.get(next);
+        expect(res.status).to.equal(STATUS.OK);
+        expect(res.body?.isOk).to.equal(true);	
+        expect(res.body.result.length).to.equal(count);
+        pages.push(res.body.result);
       }
       for (let i = 0; i < nPages; i++) {
-	//page backward
-	const prev = TestUtils.relativeUrl(res.body.links.prev.href);
-	res = await ws.get(prev);
-	expect(res.status).to.equal(STATUS.OK);
-	expect(res.body?.isOk).to.equal(true);	
-	expect(res.body.result.length).to.equal(count);
-	const rmLinks = (linked: Record<string, any>) => linked.result;
-	const pageResult = res.body.result.map(rmLinks);
-	const earlierPageResult = pages[nPages - i - 1].map(rmLinks);
-	//expect(res.body.result).to.deep.equal(pages[nPages - i - 1]);
-	expect(pageResult).to.deep.equal(earlierPageResult);
+        //page backward
+        const prev = TestUtils.relativeUrl(res.body.links.prev.href);
+        res = await ws.get(prev);
+        expect(res.status).to.equal(STATUS.OK);
+        expect(res.body?.isOk).to.equal(true);	
+        expect(res.body.result.length).to.equal(count);
+        const rmLinks = (linked: Record<string, any>) => linked.result;
+        const pageResult = res.body.result.map(rmLinks);
+        const earlierPageResult = pages[nPages - i - 1].map(rmLinks);
+        //expect(res.body.result).to.deep.equal(pages[nPages - i - 1]);
+        expect(pageResult).to.deep.equal(earlierPageResult);
       }
     });
-	       
-    
   });
 });
 

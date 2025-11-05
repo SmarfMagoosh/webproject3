@@ -42,7 +42,7 @@ describe('lending library web services', () => {
   });
 
 
-  describe.skip('Add Book Web Service', () => {
+  describe('Add Book Web Service', () => {
 
     const NUMERIC_FIELDS = [ 'pages', 'year', 'nCopies' ];
 
@@ -188,7 +188,7 @@ describe('lending library web services', () => {
 
   });  //describe('addBooks()', ...)
 
-  describe.skip('Get Book Web Service', async () => {
+  describe('Get Book Web Service', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);

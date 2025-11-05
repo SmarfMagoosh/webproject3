@@ -74,21 +74,34 @@ function setupRoutes(app: Express.Application) {
 function getBookHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     const lib: LendingLibrary = app.locals.model;
-    // request came from BASE/books/:isbn
-    if (req.params.isbn) {
-      const isbn = req.params.isbn;
-      await lib.getBook(isbn)
-        .then(response => {
-            if (response.isOk) {
-              res.status(STATUS.OK).send(response.val);
-            } else {
-              res.status(STATUS.NOT_FOUND).send({ error: `No book found with ISBN ${isbn}`})
-            }
-        })
-    } 
-    // request came from BASE/books?<query params>
-    else {
-      // TODO: implement Find-Books task
+    try {
+      // request came from BASE/books/:isbn
+      if (req.params.isbn) {
+        const isbn = req.params.isbn;
+        const result = await lib.getBook(isbn);
+        if (result.isOk) {
+          const envelope = selfResult(req, result.val, STATUS.OK);
+          return res.status(STATUS.OK).json(envelope);
+        } else {
+          const errEnv = mapResultErrors(result);
+          return res.status(errEnv.status).json(errEnv);
+        }
+      } 
+      // request came from BASE/books?<query params>
+      else {
+        console.log(req.query);
+        const result = await lib.findBooks(req.query);
+        if (result.isOk) {
+          const envelope = selfResult(req, result.val, STATUS.OK);
+          return res.status(STATUS.OK).json(envelope);
+        } else {
+          const errEnv = mapResultErrors(result);
+          return res.status(errEnv.status).json(errEnv);
+        }
+      }
+    } catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
     }
   }
 }
@@ -97,17 +110,16 @@ function putBooksHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     try {
       const lib: LendingLibrary = app.locals.model;
-      const params = req.body;
-      const result = await lib.addBook(params);
+      const result = await lib.addBook(req.body);
       if (result.isOk) {
         const envelope = selfResult(req, result.val, STATUS.CREATED);
         res.location(selfHref(req, result.val.isbn));
         return res.status(STATUS.CREATED).json(envelope);
+      } else {
+        const errEnv = mapResultErrors(result);
+        return res.status(errEnv.status).json(errEnv);
       }
-      const errEnv = mapResultErrors(result);
-      return res.status(errEnv.status).json(errEnv);
-    }
-    catch (err) {
+    } catch (err) {
       const errEnv = mapResultErrors(err);
       return res.status(errEnv.status).json(errEnv);
     }

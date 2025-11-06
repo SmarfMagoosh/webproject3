@@ -168,13 +168,39 @@ function findBooksHandler(app: Express.Application) {
 
 function putLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    // TODO: implement checkout book
+    try {
+      const lib: LendingLibrary = app.locals.model;
+      const result = await lib.checkoutBook(req.body.isbn, req.body.patronId);
+      if (result.isOk) {
+        const envelope = selfResult(req, result.val, STATUS.OK);
+        return res.status(STATUS.OK).json(envelope);
+      } else {
+        const errEnv = mapResultErrors(result);
+        return res.status(errEnv.status).json(errEnv);
+      }
+    } catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
+    }
   }
 }
 
 function deleteLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    // TODO: implement checkout book
+    try {
+      const lib: LendingLibrary = app.locals.model;
+      const result = await lib.returnBook(req.body.isbn, req.body.patronId);
+      if (result.isOk) {
+        const envelope = selfResult(req, result.val, STATUS.OK);
+        return res.status(STATUS.OK).json(envelope);
+      } else {
+        const errEnv = mapResultErrors(result);
+        return res.status(errEnv.status).json(errEnv);
+      }
+    } catch (err) {
+      const errEnv = mapResultErrors(err);
+      return res.status(errEnv.status).json(errEnv);
+    }
   }
 }
 

@@ -89,19 +89,18 @@ function getBookHandler(app: Express.Application) {
       } 
       // request came from BASE/books?<query params>
       else {
-        const searchParams: any = {}
-        // translate the input parameters for Zod
-        searchParams.search = req.query.search
-        if (req.query.index) {
-          searchParams.index = Number(req.query.index);
+        const searchParams: any = {
+          search: req.query.search,
+          index: Number(req.query.index ?? 0),
+          count: Number(req.query.count ?? DEFAULT_COUNT) + 1
         }
-        if (req.query.count) {
-          searchParams.count = Number(req.query.count);
+        if (searchParams.count <= 0) {
+          throw new Errors.Err(`count parameter cannot be negative: ${searchParams.count - 1}`, { code: 'BAD_REQ' });
         }
-
+        
         const result = await lib.findBooks(searchParams);
         if (result.isOk) {
-          const envelope = selfResult(req, result.val, STATUS.OK);
+          const envelope = pagedResult(req, "isbn", result.val);
           return res.status(STATUS.OK).json(envelope);
         } else {
           const errEnv = mapResultErrors(result);
@@ -265,19 +264,18 @@ function pagedResult<T>(req: Express.Request, idKey: keyof T, results: T[])
   const result = //(T & {links: { self: string } })[]  =
     results.map(r => {
       const selfLinks : SelfLinks =
-      { self: { rel: 'self', href: selfHref(req, r[idKey] as string),
-		method: 'GET' } };
-	return { result: r, links: selfLinks };
+        { self: { rel: 'self', href: selfHref(req, r[idKey] as string), method: 'GET' } };
+	    return { result: r, links: selfLinks };
     });
-  const links: NavLinks =
-    { self: { rel: 'self', href: selfHref(req), method: 'GET' } };
-  const next = pageLink(req, nResults, +1);
-  if (next) links.next = { rel: 'next', href: next, method: 'GET', };
-  const prev = pageLink(req, nResults, -1);
-  if (prev) links.prev = { rel: 'prev', href: prev, method: 'GET', };
-  const count = req.query.count ? Number(req.query.count) : DEFAULT_COUNT;
-  return { isOk: true, status: STATUS.OK, links,
-	   result: result.slice(0, count), };
+    const links: NavLinks =
+      { self: { rel: 'self', href: selfHref(req), method: 'GET' } };
+    const next = pageLink(req, nResults, +1);
+    if (next) links.next = { rel: 'next', href: next, method: 'GET', };
+    const prev = pageLink(req, nResults, -1);
+    if (prev) links.prev = { rel: 'prev', href: prev, method: 'GET', };
+    const count = req.query.count ? Number(req.query.count) : DEFAULT_COUNT;
+    return { isOk: true, status: STATUS.OK, links,
+	    result: result.slice(0, count), };
 }
  
 /*************************** Mapping Errors ****************************/

@@ -39,7 +39,7 @@ describe('lending library web services: extra tests', () => {
   });
 
 
-  describe.skip('Add Book Web Service', () => {
+  describe('Add Book Web Service', () => {
 
     const NUMERIC_FIELDS = [ 'pages', 'year', 'nCopies' ];
 
@@ -96,7 +96,7 @@ describe('lending library web services: extra tests', () => {
     });
   });  //describe('addBooks()', ...)
 
-  describe.skip('Find Books Web Service', async () => {
+  describe('Find Books Web Service', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);

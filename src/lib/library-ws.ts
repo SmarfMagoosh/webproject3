@@ -170,7 +170,7 @@ function putLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     try {
       const lib: LendingLibrary = app.locals.model;
-      const result = await lib.checkoutBook(req.body.isbn, req.body.patronId);
+      const result = await lib.checkoutBook(req.body);
       if (result.isOk) {
         const envelope = selfResult(req, result.val, STATUS.OK);
         return res.status(STATUS.OK).json(envelope);
@@ -189,7 +189,7 @@ function deleteLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     try {
       const lib: LendingLibrary = app.locals.model;
-      const result = await lib.returnBook(req.body.isbn, req.body.patronId);
+      const result = await lib.returnBook(req.body);
       if (result.isOk) {
         const envelope = selfResult(req, result.val, STATUS.OK);
         return res.status(STATUS.OK).json(envelope);

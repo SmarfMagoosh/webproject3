@@ -374,7 +374,7 @@ describe('lending library web services', () => {
     
   });
 
-  describe.skip('Checkout Book Web Service with empty library', async () => {
+  describe('Checkout Book Web Service with empty library', async () => {
 
     it('must error on missing field', async () => {
       for (const f of [ 'isbn', 'patronId' ]) {
@@ -402,7 +402,7 @@ describe('lending library web services', () => {
 
   });    
 
-  describe.skip('Checkout Book Web Service with populated library', async () => {
+  describe('Checkout Book Web Service with populated library', async () => {
     
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -446,7 +446,7 @@ describe('lending library web services', () => {
 
   });
 
-  describe.skip('Checkout and Return Book Web Services', async () => {
+  describe('Checkout and Return Book Web Services', async () => {
 
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -576,7 +576,7 @@ describe('lending library web services', () => {
   });    
 
   //additional web service added for subsequent projects
-  describe.skip('Find lendings populated library', async () => {
+  describe('Find lendings populated library', async () => {
     
     beforeEach(async () => {
       await loadAllBooks(ws);
@@ -587,20 +587,19 @@ describe('lending library web services', () => {
       const book = BOOKS[0];
       const isbn = book.isbn;
       for (const patronId of PATRONS) {
-	const res = await ws.put(url)
-	  .set('Content-Type', 'application/json')
-	  .send( { patronId, isbn });
-	expect(res.status).to.equal(STATUS.OK);
-	expect(res.body?.isOk).to.equal(true);
+	      const res = await ws.put(url)
+          .set('Content-Type', 'application/json')
+          .send( { patronId, isbn });
+        expect(res.status).to.equal(STATUS.OK);
+        expect(res.body?.isOk).to.equal(true);
       }
       const res = await ws.get(url).query({ findBy: 'isbn', isbn });
       expect(res.status).to.equal(STATUS.OK);
       expect(res.body?.isOk).to.equal(true);
       const result: Lib.Lend[] = res.body.result;
-      const lends = result.sort((b1, b2) =>
-	b1.patronId.localeCompare(b2.patronId));
+      const lends = result.sort((b1, b2) => b1.patronId.localeCompare(b2.patronId));
       const expected = PATRONS.map(patronId => ({ isbn, patronId }))
-	.sort((b1, b2) => b1.patronId.localeCompare(b2.patronId));
+	      .sort((b1, b2) => b1.patronId.localeCompare(b2.patronId));
       expect(lends).to.deep.equal(expected);      
     });
 

@@ -12,6 +12,8 @@ import { Link, SelfLinks, NavLinks,
 	 SuccessEnvelope, PagedEnvelope, ErrorEnvelope }
   from './response-envelopes.js';
 import { get } from 'https';
+import { Result } from 'cs544-js-utils/dist/lib/errors.js';
+import { Lend } from 'lending-library/dist/lib/library.js';
 
 type RequestWithQuery = Express.Request
   & { query: { [_: string]: string|string[]|number } };
@@ -53,15 +55,17 @@ function setupRoutes(app: Express.Application) {
   //app.use(doTrace(app));
   
   //set up application routes
-  app.get(`${base}/books/:isbn`, getBookHandler(app));
+  app.get(`${base}/books/:isbn/`, getBookHandler(app));
 
-  app.get(`${base}/books`, getBookHandler(app));
+  app.get(`${base}/books/`, getBookHandler(app));
 
-  app.put(`${base}/books`, putBooksHandler(app));
+  app.put(`${base}/books/`, putBooksHandler(app));
 
-  app.put(`${base}/lendings`, putLendingsHandler(app));
+  app.get(`${base}/lendings/`, getLendingsHandler(app));
 
-  app.delete(`${base}/lendings`, deleteLendingsHandler(app));
+  app.put(`${base}/lendings/`, putLendingsHandler(app));
+
+  app.delete(`${base}/lendings/`, deleteLendingsHandler(app));
 
   app.delete(`${base}`, deleteHandler(app));
 
@@ -74,150 +78,110 @@ function setupRoutes(app: Express.Application) {
 function getBookHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     const lib: LendingLibrary = app.locals.model;
-    try {
-      // request came from BASE/books/:isbn
-      if (req.params.isbn) {
-        const isbn = req.params.isbn;
-        const result = await lib.getBook(isbn);
-        if (result.isOk) {
-          const envelope = selfResult(req, result.val, STATUS.OK);
-          return res.status(STATUS.OK).json(envelope);
-        } else {
-          const errEnv = mapResultErrors(result);
-          return res.status(errEnv.status).json(errEnv);
-        }
-      } 
-      // request came from BASE/books?<query params>
-      else {
-        const searchParams: any = {
-          search: req.query.search,
-          index: Number(req.query.index ?? 0),
-          count: Number(req.query.count ?? DEFAULT_COUNT) + 1
-        }
-        if (searchParams.count <= 0) {
-          throw new Errors.Err(`count parameter cannot be negative: ${searchParams.count - 1}`, { code: 'BAD_REQ' });
-        }
-        
-        const result = await lib.findBooks(searchParams);
-        if (result.isOk) {
-          const envelope = pagedResult(req, "isbn", result.val);
-          return res.status(STATUS.OK).json(envelope);
-        } else {
-          const errEnv = mapResultErrors(result);
-          return res.status(errEnv.status).json(errEnv);
-        }
+    if (req.params.isbn) {
+      return await lib.getBook(req.params.isbn)
+        .then(nonErrorResult(req, res))
+        .catch(errorResult(res))
+    } else {
+      const searchParams: any = {
+        search: req.query.search,
+        index: Number(req.query.index ?? 0),
+        count: Number(req.query.count ?? DEFAULT_COUNT) + 1
       }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
+      if (searchParams.count <= 0) {
+        return errorResult(res)(
+          new Errors.Err(`count parameter cannot be negative: ${searchParams.count - 1}`, { code: 'BAD_REQ' })
+        );
+      }
+      return await lib.findBooks(searchParams)
+        .then(result => {
+          if (result.isOk) {
+            const envelope = pagedResult(req, "isbn", result.val);
+            return res.status(STATUS.OK).json(envelope);
+          } else {
+            return badResult(res)(result);
+          }
+        })
+        .catch(errorResult(res))
     }
   }
 }
 
 function putBooksHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    try {
-      const lib: LendingLibrary = app.locals.model;
-      const result = await lib.addBook(req.body);
-      if (result.isOk) {
-        const envelope = selfResult(req, result.val, STATUS.CREATED);
-        res.location(selfHref(req, result.val.isbn));
-        return res.status(STATUS.CREATED).json(envelope);
-      } else {
-        const errEnv = mapResultErrors(result);
-        return res.status(errEnv.status).json(errEnv);
-      }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
-    }
+    const lib: LendingLibrary = app.locals.model;
+    return await lib.addBook(req.body)
+      .then(result => {
+        if (result.isOk) {
+          const envelope = selfResult(req, result.val, STATUS.CREATED);
+          res.location(selfHref(req, result.val.isbn));
+          return res.status(STATUS.CREATED).json(envelope);
+        } else {
+          return badResult(res)(result);
+        }
+      })
+      .catch(errorResult(res));
   }
 }
 
-function findBooksHandler(app: Express.Application) {
+function getLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
     const lib: LendingLibrary = app.locals.model;
-    try {
-      const searchParams: any = {}
-      
-      // translate the input parameters exactly like in your getBookHandler
-      searchParams.search = req.query.search as string;
-      
-      if (req.query.index) {
-        searchParams.index = Number(req.query.index);
-      }
-      if (req.query.count) {
-        searchParams.count = Number(req.query.count);
-      }
-
-      const result = await lib.findBooks(searchParams);
-      if (result.isOk) {
-        const envelope = selfResult(req, result.val, STATUS.OK);
-        return res.status(STATUS.OK).json(envelope);
-      } else {
-        const errEnv = mapResultErrors(result);
-        return res.status(errEnv.status).json(errEnv);
-      }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
-    }
+    return await lib.findLendings(req.query)
+      .then(nonErrorResult(req, res))
+      .catch(errorResult(res));
   }
 }
 
 function putLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    try {
-      const lib: LendingLibrary = app.locals.model;
-      const result = await lib.checkoutBook(req.body);
-      if (result.isOk) {
-        const envelope = selfResult(req, result.val, STATUS.OK);
-        return res.status(STATUS.OK).json(envelope);
-      } else {
-        const errEnv = mapResultErrors(result);
-        return res.status(errEnv.status).json(errEnv);
-      }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
-    }
+    const lib: LendingLibrary = app.locals.model;
+    return await lib.checkoutBook(req.body)
+      .then(nonErrorResult(req, res))
+      .catch(errorResult(res));
   }
 }
 
 function deleteLendingsHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    try {
-      const lib: LendingLibrary = app.locals.model;
-      const result = await lib.returnBook(req.body);
-      if (result.isOk) {
-        const envelope = selfResult(req, result.val, STATUS.OK);
-        return res.status(STATUS.OK).json(envelope);
-      } else {
-        const errEnv = mapResultErrors(result);
-        return res.status(errEnv.status).json(errEnv);
-      }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
-    }
+    const lib: LendingLibrary = app.locals.model;
+    return await lib.returnBook(req.body)
+      .then(nonErrorResult(req, res))
+      .catch(errorResult(res));
   }
 }
 
 function deleteHandler(app: Express.Application) {
   return async function(req: Express.Request, res: Express.Response) {
-    try {
-      const result = await app.locals.model.clear();
-      if (result.isOk) {
-        const envelope = selfResult(req, result.val, STATUS.OK);
-        return res.status(STATUS.OK).json(envelope);
-      } else {
-        const errEnv = mapResultErrors(result);
-        return res.status(errEnv.status).json(errEnv);
-      }
-    } catch (err) {
-      const errEnv = mapResultErrors(err);
-      return res.status(errEnv.status).json(errEnv);
+    const lib: LendingLibrary = app.locals.model;
+    return await lib.clear()
+      .then(nonErrorResult(req, res))
+      .catch(errorResult(res));
+  }
+}
+
+function nonErrorResult(req: Express.Request, res: Express.Response) {
+  return function(result: Result<any>) {
+    if (result.isOk) {
+      const envelope = selfResult(req, result.val, STATUS.OK);
+      return res.status(STATUS.OK).json(envelope);
+    } else {
+      return badResult(res)(result);
     }
+  }
+}
+
+function badResult(res: Express.Response) {
+  return function(result: Result<any>) {
+    const errEnv = mapResultErrors(result);
+    return res.status(errEnv.status).json(errEnv);
+  }
+}
+
+function errorResult(res: Express.Response) {
+  return function(err: any) {
+    const errEnv = mapResultErrors(err);
+    return res.status(errEnv.status).json(errEnv);
   }
 }
 
@@ -321,18 +285,19 @@ function pagedResult<T>(req: Express.Request, idKey: keyof T, results: T[])
   const result = //(T & {links: { self: string } })[]  =
     results.map(r => {
       const selfLinks : SelfLinks =
-        { self: { rel: 'self', href: selfHref(req, r[idKey] as string), method: 'GET' } };
-	    return { result: r, links: selfLinks };
+      { self: { rel: 'self', href: selfHref(req, r[idKey] as string),
+		method: 'GET' } };
+	return { result: r, links: selfLinks };
     });
-    const links: NavLinks =
-      { self: { rel: 'self', href: selfHref(req), method: 'GET' } };
-    const next = pageLink(req, nResults, +1);
-    if (next) links.next = { rel: 'next', href: next, method: 'GET', };
-    const prev = pageLink(req, nResults, -1);
-    if (prev) links.prev = { rel: 'prev', href: prev, method: 'GET', };
-    const count = req.query.count ? Number(req.query.count) : DEFAULT_COUNT;
-    return { isOk: true, status: STATUS.OK, links,
-	    result: result.slice(0, count), };
+  const links: NavLinks =
+    { self: { rel: 'self', href: selfHref(req), method: 'GET' } };
+  const next = pageLink(req, nResults, +1);
+  if (next) links.next = { rel: 'next', href: next, method: 'GET', };
+  const prev = pageLink(req, nResults, -1);
+  if (prev) links.prev = { rel: 'prev', href: prev, method: 'GET', };
+  const count = req.query.count ? Number(req.query.count) : DEFAULT_COUNT;
+  return { isOk: true, status: STATUS.OK, links,
+	   result: result.slice(0, count), };
 }
  
 /*************************** Mapping Errors ****************************/
@@ -400,4 +365,3 @@ const CORS_OPTIONS = {
   //response headers exposed to cross-origin requests
   exposedHeaders: [  'Location', 'Content-Type', ],
 };
-

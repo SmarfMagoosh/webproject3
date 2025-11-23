@@ -356,7 +356,7 @@ const CORS_OPTIONS = {
   origin: true,
 
   //methods allowed for cross-origin requests
-  methods: [ 'GET', 'PUT', ],
+  methods: [ 'GET', 'PUT', 'DELETE'],
 
   //request headers allowed on cross-origin requests
   //used to allow JSON content

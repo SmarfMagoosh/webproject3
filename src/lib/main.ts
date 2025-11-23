@@ -11,11 +11,13 @@ import fs from 'fs';
 import util from 'util';
 import https from 'https';
 import Path from 'path';
+import { makeMemDao } from '../test/mem-dao.js';
 
 const readFile = util.promisify(fs.readFile);
 
 export async function main(args: string[]) {
   if (args.length < 1) usage();
+
   const config = (await import(cwdPath(args[0]))).default;
   const port: number = config.ws.port;
   if (port < 1024) {
@@ -23,16 +25,19 @@ export async function main(args: string[]) {
   }
   let dao : LibraryDao|null = null;
   try {
-    const daoResult = await makeLibraryDao(config.service.dbUrl);
+    const daoResult = await makeMemDao();
     if (!daoResult.isOk) panic(daoResult);
-    dao = daoResult.val;
+    dao = daoResult.val.dao;
+
     const servicesResult = await makeLendingLibrary(dao);
     if (!servicesResult.isOk) panic(servicesResult);
     const services = servicesResult.val;
+
     if (args.length > 1) {
       const loadResult = await loadData(services, args.slice(1));
       if (!loadResult.isOk) panic(loadResult);
     }
+
     const {app, close: closeApp} = serve(services, config.ws);
     const serverOpts = {
       key: fs.readFileSync(config.https.keyPath),
@@ -40,8 +45,12 @@ export async function main(args: string[]) {
     };
     const server = https.createServer(serverOpts, app)
       .listen(config.ws.port, function() {
-	console.log(`listening on port ${config.ws.port}`);
-      });
+	    const address = server.address();
+      const host = typeof address === "string" ? address : "localhost";
+      const port = typeof address === "string" ? "" : address?.port;
+      console.log(`Server running at https://${host}:${port}`);
+    });
+    
     //terminate using SIGINT ^C
     //console.log('enter EOF ^D to terminate server');
     //await readFile(0, 'utf8');

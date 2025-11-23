@@ -15,6 +15,4 @@ export default {
     certPath: `${CERT_BASE}/localhost.crt`,
     keyPath: `${CERT_BASE}/localhost.key`,
   },
-  
-
 };

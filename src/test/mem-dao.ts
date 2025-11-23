@@ -33,5 +33,4 @@ export class MemDao  {
     assert.equal(this.server.instanceInfo, undefined,
 		 `mongo memory server stop failed`);
   }
-
 }

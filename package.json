@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "test": "mocha --reporter-options maxDiffSize=128000 dist/test"
+    "test": "mocha --reporter-options maxDiffSize=128000 dist/test",
+    "start": "node ./dist/index.js config.mjs ./data/books.json"
   },
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@types/mongodb": "^4.0.7",
     "body-parser": "^2.2.0",
     "chai": "^6.2.0",
     "cors": "^2.8.5",
@@ -20,6 +22,7 @@
     "http-status": "^2.1.0",
     "lending-library": "file:lending-library-0.1.1.tgz",
     "mocha": "^11.7.5",
+    "mongodb": "^7.0.0",
     "mongodb-memory-server": "^10.3.0",
     "supertest": "^7.1.4"
   },
